@@ -52,7 +52,7 @@ void Close(SOCKET sock, bool now)
   }
 }
 
-int SendTCP(SOCKET sock, const char* buffer, int bytes)
+int SendTCP(SOCKET sock, const char* buffer, unsigned bytes)
 {
   int result = send(sock, buffer, bytes, 0);
   if (result == SOCKET_ERROR)
@@ -62,7 +62,7 @@ int SendTCP(SOCKET sock, const char* buffer, int bytes)
 }
 
 
-int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest)
+int Send(SOCKET sock, const char* buffer, unsigned bytes, sockaddr_in* dest)
 {
   /*if (rand() % 100 < 50)
     return bytes;/**/
@@ -73,9 +73,9 @@ int Send(SOCKET sock, const char* buffer, int bytes, sockaddr_in* dest)
     return result;
 }
 
-int Receive(SOCKET sock, char* buffer, int maxBytes, sockaddr_in *addr)
+int Receive(SOCKET sock, char* buffer, unsigned maxBytes, sockaddr_in *addr)
 {
-  int size = sizeof(sockaddr);
+  unsigned size = sizeof(sockaddr);
 
   int bytes = recvfrom(sock, buffer, maxBytes, 0, reinterpret_cast<sockaddr*>(addr), &size);
   if (bytes == SOCKET_ERROR)
@@ -84,10 +84,14 @@ int Receive(SOCKET sock, char* buffer, int maxBytes, sockaddr_in *addr)
   return bytes;
 }
 
-int Receive(SOCKET sock, char* buffer, int maxBytes)
+int Receive(SOCKET sock, char* buffer, unsigned maxBytes)
 {
   sockaddr sender;
+#ifdef _WIN32
   int size = sizeof(sockaddr);
+#else
+  unsigned size = sizeof(sockaddr);
+#endif
 
   int bytes = recvfrom(sock, buffer, maxBytes, 0, &sender, &size);
   if (bytes == SOCKET_ERROR)
@@ -98,7 +102,7 @@ int Receive(SOCKET sock, char* buffer, int maxBytes)
   return bytes;
 }
 
-int ReceiveTCP(SOCKET sock, char* buffer, int maxBytes)
+int ReceiveTCP(SOCKET sock, char* buffer, unsigned maxBytes)
 {
   int bytes = recv(sock, buffer, maxBytes, 0);
   if (bytes == SOCKET_ERROR)

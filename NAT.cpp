@@ -39,7 +39,7 @@ void NAT::Update()
   {
     //check to make sure they sent enough data
     //the message should be the ip address of the server they want to connect to
-    if (n - 1 < sizeof(new_client.sin_addr.S_un.S_addr))
+    if (n - 1 < sizeof(new_client.sin_addr.s_addr))
     {
       break;
     }
@@ -47,7 +47,7 @@ void NAT::Update()
     unsigned i = 0;
     while (i < connections_.size())
     {
-      if (connections_[i].sin_addr.S_un.S_addr == *reinterpret_cast<unsigned long*>(buffer_ + 1))
+      if (connections_[i].sin_addr.s_addr == *reinterpret_cast<unsigned long*>(buffer_ + 1))
       {
         //found the server
         break;
@@ -72,8 +72,8 @@ void NAT::Update()
     for (unsigned i = 0; i < connections_.size(); ++i)
     {
       //make sure same ip and port
-      if (connections_[i].sin_addr.S_un.S_addr ==
-        new_client.sin_addr.S_un.S_addr &&
+      if (connections_[i].sin_addr.s_addr ==
+        new_client.sin_addr.s_addr &&
         connections_[i].sin_port == new_client.sin_port)
       {
         connections_.erase(connections_.begin() + i);
