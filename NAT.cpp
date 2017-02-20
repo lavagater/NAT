@@ -1,4 +1,5 @@
 #include "NAT.h"
+#include <iostream>
 
 NAT::NAT(int port)
 {
@@ -12,6 +13,13 @@ NAT::NAT(int port)
   Bind(sock_, &addr_);
   //sets the socket as non blocking
   SetNonBlocking(sock_);
+  
+  //debugging
+  std::cout << "size of sockaddr_in = " << sizeof(addr_) << std::endl;
+  std::cout << "offset for sin_addr = " << reinterpret_cast<char*>(&addr_.sin_addr) - reinterpret_cast<char*>(&addr_) << std::endl;
+  std::cout << "offset for sinport = " << reinterpret_cast<char*>(&addr_.sin_port) - reinterpret_cast<char*>(&addr_) << std::endl;
+  std::cout << "offset for s_addr = " << reinterpret_cast<char*>(&addr_.sin_addr.s_addr) - reinterpret_cast<char*>(&addr_) << std::endl;
+  std::cout << "size of sockaddr_in.sin_addr = " << sizeof(addr_.sin_addr) << std::endl;
 }
 NAT::~NAT()
 {
