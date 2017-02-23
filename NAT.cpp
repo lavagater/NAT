@@ -1,5 +1,4 @@
 #include "NAT.h"
-#include <iostream>
 
 NAT::NAT(int port)
 {
@@ -13,13 +12,6 @@ NAT::NAT(int port)
   Bind(sock_, &addr_);
   //sets the socket as non blocking
   SetNonBlocking(sock_);
-  
-  //debugging
-  std::cout << "size of sockaddr_in = " << sizeof(addr_) << std::endl;
-  std::cout << "offset for sin_addr = " << reinterpret_cast<char*>(&addr_.sin_addr) - reinterpret_cast<char*>(&addr_) << std::endl;
-  std::cout << "offset for sinport = " << reinterpret_cast<char*>(&addr_.sin_port) - reinterpret_cast<char*>(&addr_) << std::endl;
-  std::cout << "offset for s_addr = " << reinterpret_cast<char*>(&addr_.sin_addr.s_addr) - reinterpret_cast<char*>(&addr_) << std::endl;
-  std::cout << "size of sockaddr_in.sin_addr = " << sizeof(addr_.sin_addr) << std::endl;
 }
 NAT::~NAT()
 {
@@ -73,6 +65,9 @@ void NAT::Update()
     buffer_[0] = 4;
     *reinterpret_cast<sockaddr_in*>(buffer_ + 1) = connections_[i];
     Send(sock_, buffer_, sizeof(sockaddr_in) + 1, &new_client);
+    //send to the sever as well
+    *reinterpret_cast<sockaddr_in*>(buffer_ + 1) = new_client;
+    Send(sock_, buffer_, sizeof(sockaddr_in) + 1, &connections_[i]);
     break;
   }
   case 2://2 = server stop listening
