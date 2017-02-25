@@ -1,5 +1,6 @@
 #include "NAT.h"
 #include <time.h>
+#include <iostream>
 
 NAT::NAT(int port)
 {
@@ -35,12 +36,15 @@ void NAT::Update()
         connection_to_remove = i;
         continue;
       }
+      //send ping
+      buffer_[0] = 5;
       Send(sock_, buffer_, 1, &connections_[i]);
       start_times_[i] = current_time;
     }
   }
   if (connection_to_remove != -1)
   {
+    std::cout << "client removed ip " << connections_[connection_to_remove].sin_addr.s_addr << std::endl;
     //remove them from arrays
     connections_.erase(connections_.begin() + connection_to_remove);
     timers_.erase(timers_.begin() + connection_to_remove);
@@ -64,14 +68,15 @@ void NAT::Update()
     {
       //make sure same ip and port
       if (connections_[i].sin_addr.s_addr ==
-        new_client.sin_addr.s_addr &&
-        connections_[i].sin_port == new_client.sin_port)
+        new_client.sin_addr.s_addr)
       {
+        exists = true;
         break;
       }
     }
     if (exists == false)
     {
+      std::cout << "connection added ip " << new_client.sin_addr.s_addr << std::endl;
       //add the connection
       connections_.push_back(new_client);
       timers_.push_back(CONNECTION_TIME);
@@ -87,6 +92,7 @@ void NAT::Update()
     {
       break;
     }
+    std::cout << "client looking for ip " << *reinterpret_cast<unsigned long*>(buffer_ + 1) << std::endl;
     //find the server in our connections
     unsigned i = 0;
     while (i < connections_.size())
@@ -103,8 +109,10 @@ void NAT::Update()
       //we did not find the server tell the client they dont exist
       buffer_[0] = 3;
       Send(sock_, buffer_, 1, &new_client);
+      std::cout << "not found" << std::endl;
       break;
     }
+    std::cout << "sent data" << std::endl;
     //send back to the client the address and port to connect to
     buffer_[0] = 4;
     *reinterpret_cast<sockaddr_in*>(buffer_ + 1) = connections_[i];
@@ -135,9 +143,9 @@ void NAT::Update()
     {
       //find the index of the connections
       if (connections_[i].sin_addr.s_addr ==
-        new_client.sin_addr.s_addr &&
-        connections_[i].sin_port == new_client.sin_port)
+        new_client.sin_addr.s_addr)
       {
+        std::cout << "got ping" << std::endl;
         timers_[i] = CONNECTION_TIME;
         start_times_[i] = current_time;
         break;
