@@ -1,4 +1,5 @@
 #include "NAT.h"
+#include <time.h>
 
 NAT::NAT(int port)
 {
@@ -15,10 +16,36 @@ NAT::NAT(int port)
 }
 NAT::~NAT()
 {
+  //windows only functions, linux can ignore
   Deinit();
 }
 void NAT::Update()
 {
+  unsigned current_time = clock();
+  //remove a dead connection if there is one
+  int connection_to_remove = -1;
+  //update times
+  for (unsigned i = 0; i < connections_.size(); ++i)
+  {
+    if ((current_time - start_times_[i]) / CLOCKS_PER_SEC > PING_FREQUENCY)
+    {
+      timers_[i] -= PING_FREQUENCY;
+      if (timers_[i] <= 0)
+      {
+        connection_to_remove = i;
+        continue;
+      }
+      Send(sock_, buffer_, 1, &connections_[i]);
+      start_times_[i] = current_time;
+    }
+  }
+  if (connection_to_remove != -1)
+  {
+    //remove them from arrays
+    connections_.erase(connections_.begin() + connection_to_remove);
+    timers_.erase(timers_.begin() + connection_to_remove);
+    start_times_.erase(start_times_.begin() + connection_to_remove);
+  }
   sockaddr_in new_client;
   int n = Receive(sock_, buffer_, 64, &new_client);
   //nothing read then we done
@@ -31,8 +58,25 @@ void NAT::Update()
   {
   case 0: //0 = server start listening
   {
-    //add the connection
-    connections_.push_back(new_client);
+    //check if the connection already exists
+    bool exists = false;
+    for (unsigned i = 0; i < connections_.size(); ++i)
+    {
+      //make sure same ip and port
+      if (connections_[i].sin_addr.s_addr ==
+        new_client.sin_addr.s_addr &&
+        connections_[i].sin_port == new_client.sin_port)
+      {
+        break;
+      }
+    }
+    if (exists == false)
+    {
+      //add the connection
+      connections_.push_back(new_client);
+      timers_.push_back(CONNECTION_TIME);
+      start_times_.push_back(current_time);
+    }
     break;
   }
   case 1://1 = client connecting to a server
@@ -84,6 +128,21 @@ void NAT::Update()
       }
     }
     break;
+  }
+  case 5:
+  {
+    for (unsigned i = 0; i < connections_.size(); ++i)
+    {
+      //find the index of the connections
+      if (connections_[i].sin_addr.s_addr ==
+        new_client.sin_addr.s_addr &&
+        connections_[i].sin_port == new_client.sin_port)
+      {
+        timers_[i] = CONNECTION_TIME;
+        start_times_[i] = current_time;
+        break;
+      }
+    }
   }
   }
 }
